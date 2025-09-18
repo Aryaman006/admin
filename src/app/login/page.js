@@ -42,7 +42,7 @@ export default function LoginPage() {
         >
           <div>
             <p className="text-2xl font-light italic leading-relaxed max-w-lg mx-auto">
-              “A dream doesn't become reality through magic; it takes sweat,
+              “A dream doesn&apos;t become reality through magic; it takes sweat, determination and hard work.”
               determination and hard work.”
             </p>
             <span className="block mt-6 text-sm opacity-80">— Wroots Global</span>

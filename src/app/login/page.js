@@ -25,11 +25,12 @@ export default function LoginPage() {
     <div className="flex h-screen">
       {/* Left Side with Image */}
       <div className="hidden md:flex w-1/2 relative">
-        <img
-          src="/mill.jpg"
-          alt="Mill workspace"
-          className="absolute inset-0 w-full h-full object-cover"
-        />
+       <Image
+  src="/mill.jpg"
+  alt="Mill workspace"
+  fill
+  className="object-cover"
+/>
         <div className="absolute inset-0 bg-gradient-to-b from-black/70 to-black/50" />
 
         {/* Centered Quote */}

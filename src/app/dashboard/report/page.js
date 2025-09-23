@@ -13,90 +13,99 @@ import {
   Cell,
   LabelList,
 } from "recharts";
-import { useMemo } from "react";
 
 export default function ReportsPage() {
-  const trips = useSelector((state) => state.trips.trips);
-  const managers = useSelector((state) => state.managers.managers);
+  const trips = useSelector((state) => state.trips.trips) || [];
+  const managers = useSelector((state) => state.managers.list) || [];
 
-  // Vibrant color palette
+  // 🎨 Vibrant color palette
   const colors = [
     "#4F46E5", "#16A34A", "#F59E0B", "#DB2777", "#14B8A6", "#F97316",
     "#8B5CF6", "#EC4899", "#22D3EE", "#F87171", "#10B981", "#FBBF24"
   ];
 
-  const parseWeight = (w) => (w ? Number(w.replace("kg", "").trim()) : 0);
-
   // --- Summary ---
   const totalTrips = trips.length;
-  const totalWeight = trips.reduce((acc, t) => acc + parseWeight(t.weight), 0);
-  const activeManagers = [...new Set(trips.map((t) => t.manager))].length;
+  const totalWeight = trips.reduce((acc, t) => acc + Number(t.quantity?.net || 0), 0);
+  const activeManagers = [...new Set(trips.map((t) => t.driver?.name).filter(Boolean))].length;
 
   // --- Trips by Manager ---
   const tripsByManager = managers.map((mgr) => ({
     manager: mgr.name,
-    trips: trips.filter((t) => t.manager === mgr.name).length,
+    trips: trips.filter((t) => t.driver?._id === mgr._id).length,
   }));
 
   // --- Weight Distribution by Item ---
-  const items = [...new Set(trips.map((t) => t.items))];
+  const items = [...new Set(trips.map((t) => t.material?.name).filter(Boolean))];
   const weightByItem = items.map((item) => ({
     name: item,
     value: trips
-      .filter((t) => t.items === item)
-      .reduce((acc, t) => acc + parseWeight(t.weight), 0),
+      .filter((t) => t.material?.name === item)
+      .reduce((acc, t) => acc + Number(t.quantity?.net || 0), 0),
   }));
 
   // --- Source & Destination Locations ---
-  const sourceLocations = [...new Set(trips.map((t) => t.origin))];
-  const destLocations = [...new Set(trips.map((t) => t.destination))];
+  const sourceLocations = [...new Set(trips.map((t) => t.source?.location?.name || t.source?.customLocation).filter(Boolean))];
+  const destLocations = [...new Set(trips.map((t) => t.destination?.location?.name || t.destination?.customLocation).filter(Boolean))];
 
   const tripsBySource = sourceLocations.map((loc) => ({
     location: loc,
-    trips: trips.filter((t) => t.origin === loc).length,
+    trips: trips.filter((t) => (t.source?.location?.name || t.source?.customLocation) === loc).length,
   }));
 
   const tripsByDestination = destLocations.map((loc) => ({
     location: loc,
-    trips: trips.filter((t) => t.destination === loc).length,
+    trips: trips.filter((t) => (t.destination?.location?.name || t.destination?.customLocation) === loc).length,
   }));
 
-  // --- Memoize charts for performance ---
+  // --- Chart Render Helpers ---
   const renderBarChart = (data, dataKey, fill) => (
-    <ResponsiveContainer width="100%" height={256}>
-      <BarChart data={data} margin={{ top: 20, right: 20, left: -10, bottom: 20 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-        <XAxis dataKey="location" tick={{ fill: "#374151", fontSize: 12 }} />
-        <YAxis allowDecimals={false} />
-        <Tooltip />
-        <Bar dataKey={dataKey} fill={fill} radius={[6, 6, 0, 0]} animationDuration={1500}>
-          <LabelList dataKey={dataKey} position="top" />
-        </Bar>
-      </BarChart>
-    </ResponsiveContainer>
+    data.length === 0 ? (
+      <div className="h-64 flex items-center justify-center text-gray-400 text-sm">
+        No data available
+      </div>
+    ) : (
+      <ResponsiveContainer width="100%" height={256}>
+        <BarChart data={data} margin={{ top: 20, right: 20, left: -10, bottom: 20 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+          <XAxis dataKey="location" tick={{ fill: "#374151", fontSize: 12 }} />
+          <YAxis allowDecimals={false} />
+          <Tooltip />
+          <Bar dataKey={dataKey} fill={fill} radius={[6, 6, 0, 0]} animationDuration={1500}>
+            <LabelList dataKey={dataKey} position="top" />
+          </Bar>
+        </BarChart>
+      </ResponsiveContainer>
+    )
   );
 
   const renderPieChart = (data, dataKey, nameKey) => (
-    <ResponsiveContainer width="100%" height={256}>
-      <PieChart>
-        <Pie
-          data={data}
-          dataKey={dataKey}
-          nameKey={nameKey}
-          cx="50%"
-          cy="50%"
-          outerRadius={80}
-          innerRadius={dataKey === "value" ? 50 : 0}
-          label={(entry) => `${entry[nameKey]} (${entry[dataKey]})`}
-          animationDuration={1500}
-        >
-          {data.map((_, idx) => (
-            <Cell key={idx} fill={colors[idx % colors.length]} />
-          ))}
-        </Pie>
-        <Tooltip formatter={(val) => (dataKey === "value" ? `${val} kg` : `${val} trips`)} />
-      </PieChart>
-    </ResponsiveContainer>
+    data.length === 0 ? (
+      <div className="h-64 flex items-center justify-center text-gray-400 text-sm">
+        No data available
+      </div>
+    ) : (
+      <ResponsiveContainer width="100%" height={256}>
+        <PieChart>
+          <Pie
+            data={data}
+            dataKey={dataKey}
+            nameKey={nameKey}
+            cx="50%"
+            cy="50%"
+            outerRadius={80}
+            innerRadius={dataKey === "value" ? 50 : 0}
+            label={(entry) => `${entry[nameKey]} (${entry[dataKey]})`}
+            animationDuration={1500}
+          >
+            {data.map((_, idx) => (
+              <Cell key={idx} fill={colors[idx % colors.length]} />
+            ))}
+          </Pie>
+          <Tooltip formatter={(val) => (dataKey === "value" ? `${val} kg` : `${val} trips`)} />
+        </PieChart>
+      </ResponsiveContainer>
+    )
   );
 
   return (

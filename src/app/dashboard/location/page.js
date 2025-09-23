@@ -6,7 +6,7 @@ import { addLocation, editLocation, deleteLocation } from "@/redux/slices/locati
 import { useState } from "react";
 
 export default function LocationPage() {
-  const locations = useSelector((state) => state.locations.locations);
+  const locations = useSelector((state) => state.locations.locations) || []; // default to empty array
   const dispatch = useDispatch();
 
   const [openModal, setOpenModal] = useState(false);
@@ -55,39 +55,46 @@ export default function LocationPage() {
 
       {/* Table */}
       <div className="overflow-x-auto rounded-xl border border-gray-200 shadow-lg bg-white">
-        <table className="min-w-full border-collapse">
-          <thead className="bg-gray-100">
-            <tr>
-              <th className="px-6 py-4 text-left font-medium text-gray-700 text-sm">
-                Location Name
-              </th>
-              <th className="px-6 py-4 text-right font-medium text-gray-700 text-sm">
-                Actions
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {locations.map((loc, i) => (
-              <tr key={loc.id} className="border-b last:border-b-0 hover:bg-gray-50 transition-colors">
-                <td className="px-6 py-3 text-sm text-gray-800">{loc.name}</td>
-                <td className="px-6 py-3 flex justify-end gap-3">
-                  <button
-                    onClick={() => handleEdit(i)}
-                    className="w-9 h-9 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100"
-                  >
-                    <Edit2 className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => handleDelete(i)}
-                    className="w-9 h-9 rounded-full bg-red-50 text-red-600 hover:bg-red-100"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </td>
+        {locations.length > 0 ? (
+          <table className="min-w-full border-collapse">
+            <thead className="bg-gray-100">
+              <tr>
+                <th className="px-6 py-4 text-left font-medium text-gray-700 text-sm">
+                  Location Name
+                </th>
+                <th className="px-6 py-4 text-right font-medium text-gray-700 text-sm">
+                  Actions
+                </th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {locations.map((loc, i) => (
+                <tr
+                  key={loc.id}
+                  className="border-b last:border-b-0 hover:bg-gray-50 transition-colors"
+                >
+                  <td className="px-6 py-3 text-sm text-gray-800">{loc.name}</td>
+                  <td className="px-6 py-3 flex justify-end gap-3">
+                    <button
+                      onClick={() => handleEdit(i)}
+                      className="w-9 h-9 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100"
+                    >
+                      <Edit2 className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(i)}
+                      className="w-9 h-9 rounded-full bg-red-50 text-red-600 hover:bg-red-100"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        ) : (
+          <div className="p-6 text-center text-gray-500">No locations available.</div>
+        )}
       </div>
 
       {/* Modal */}
@@ -95,7 +102,7 @@ export default function LocationPage() {
         open={openModal}
         onClose={() => setOpenModal(false)}
         onSave={handleSave}
-        initialValue={currentIndex !== null ? locations[currentIndex].name : ""}
+        initialValue={currentIndex !== null ? locations[currentIndex]?.name || "" : ""}
         title={currentIndex !== null ? "Edit Location" : "Add Location"}
       />
     </div>

@@ -1,36 +1,70 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 
-// 🔐 Login thunk
-export const loginUser = createAsyncThunk(
-  "auth/loginUser",
-  async ({ email, password }, { rejectWithValue }) => {
+const BASE_URL = "https://rice-mill-tracker-production.up.railway.app/v1";
+
+// 🔐 Register thunk
+export const registerUser = createAsyncThunk(
+  "auth/registerUser",
+  async ({ name, email, password }, { rejectWithValue }) => {
     try {
-      // 👉 Replace this with real backend API
-      if (email === "admin@test.com" && password === "123456") {
-        const user = { id: 1, name: "Admin User", email, token: "fake-jwt-token" };
+      const res = await fetch(`${BASE_URL}/auth/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, password }),
+      });
 
-        // store token in localStorage (for refresh)
-        localStorage.setItem("authUser", JSON.stringify(user));
-        document.cookie = `user=${user.email}; path=/`; // for middleware
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Registration failed");
 
-        return user;
-      } else {
-        return rejectWithValue("Invalid credentials");
-      }
+      // Store user + access token
+      const userWithToken = {
+        ...data.user,
+        token: data.tokens.access.token,
+      };
+      localStorage.setItem("authUser", JSON.stringify(userWithToken));
+
+      return userWithToken;
     } catch (err) {
       return rejectWithValue(err.message);
     }
   }
 );
 
-// 🔐 Logout thunk
+// 🔐 Login thunk
+export const loginUser = createAsyncThunk(
+  "auth/loginUser",
+  async ({ email, password }, { rejectWithValue }) => {
+    try {
+      const res = await fetch(`${BASE_URL}/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Invalid credentials");
+
+      // Store user + access token
+      const userWithToken = {
+        ...data.user,
+        token: data.tokens.access.token,
+      };
+      localStorage.setItem("authUser", JSON.stringify(userWithToken));
+
+      return userWithToken;
+    } catch (err) {
+      return rejectWithValue(err.message);
+    }
+  }
+);
+
+// 🔐 Logout thunk (local only)
 export const logoutUser = createAsyncThunk("auth/logoutUser", async () => {
   localStorage.removeItem("authUser");
-  document.cookie = "user=; path=/; max-age=0"; // clear cookie
   return null;
 });
 
-// 🔐 Refresh thunk (on app load)
+// 🔐 Refresh thunk
 export const refreshUser = createAsyncThunk(
   "auth/refreshUser",
   async (_, { rejectWithValue }) => {
@@ -40,12 +74,26 @@ export const refreshUser = createAsyncThunk(
 
       const user = JSON.parse(stored);
 
-      // 👉 OPTIONAL: if you have backend, validate token
-      // const res = await fetch("/api/refresh", { headers: { Authorization: `Bearer ${user.token}` }});
-      // const newToken = await res.json();
-      // user.token = newToken;
+      // Use refresh token if needed or access token
+      const res = await fetch(`${BASE_URL}/auth/refresh`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${user.token}`,
+        },
+      });
 
-      return user;
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Session expired");
+
+      // Update stored user + token
+      const userWithToken = {
+        ...data.user,
+        token: data.tokens.access.token,
+      };
+      localStorage.setItem("authUser", JSON.stringify(userWithToken));
+
+      return userWithToken;
     } catch (err) {
       return rejectWithValue(err.message);
     }
@@ -64,6 +112,20 @@ const authSlice = createSlice({
   reducers: {},
   extraReducers: (builder) => {
     builder
+      // Register
+      .addCase(registerUser.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(registerUser.fulfilled, (state, action) => {
+        state.loading = false;
+        state.user = action.payload;
+      })
+      .addCase(registerUser.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+
       // Login
       .addCase(loginUser.pending, (state) => {
         state.loading = true;
@@ -77,10 +139,12 @@ const authSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
+
       // Logout
       .addCase(logoutUser.fulfilled, (state) => {
         state.user = null;
       })
+
       // Refresh
       .addCase(refreshUser.fulfilled, (state, action) => {
         state.user = action.payload;

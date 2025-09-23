@@ -1,16 +1,23 @@
 "use client";
+import { useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import { PlusCircle, Edit2, Trash2 } from "lucide-react";
 import TripModal from "@/components/TripModal";
-import { useDispatch, useSelector } from "react-redux";
-import { addTrip, editTrip, deleteTrip } from "@/redux/slices/tripsSlice";
-import { useState } from "react";
+import { fetchTrips, addTrip, editTrip, deleteTrip } from "@/redux/slices/tripsSlice";
 
 export default function TripsPage() {
-  const trips = useSelector((state) => state.trips.trips);
+  const { trips, loading, error } = useSelector((state) => state.trips);
   const dispatch = useDispatch();
 
   const [isOpen, setIsOpen] = useState(false);
   const [currentTrip, setCurrentTrip] = useState(null);
+
+  useEffect(() => {
+    dispatch(fetchTrips());
+    // const token = getState().auth.user?.token;
+    // console.log(token);
+    
+  }, [dispatch]);
 
   const openAddModal = () => {
     setCurrentTrip(null);
@@ -24,7 +31,7 @@ export default function TripsPage() {
 
   const handleSave = (data) => {
     if (currentTrip) {
-      dispatch(editTrip({ id: currentTrip.id, updatedTrip: data }));
+      dispatch(editTrip({ id: currentTrip._id, updatedTrip: data }));
     } else {
       dispatch(addTrip(data));
     }
@@ -50,6 +57,9 @@ export default function TripsPage() {
         </button>
       </div>
 
+      {loading && <p>Loading trips...</p>}
+      {error && <p className="text-red-500">{error}</p>}
+
       <div className="overflow-x-auto rounded-xl border border-gray-200 shadow bg-white">
         <table className="min-w-full border-collapse text-sm text-gray-700">
           <thead className="bg-gray-100">
@@ -58,18 +68,18 @@ export default function TripsPage() {
               <th className="px-6 py-3 text-left">Destination</th>
               <th className="px-6 py-3 text-left">Items</th>
               <th className="px-6 py-3 text-left">Weight</th>
-              <th className="px-6 py-3 text-left">Manager</th>
+              <th className="px-6 py-3 text-left">Manager (Driver)</th>
               <th className="px-6 py-3 text-right">Actions</th>
             </tr>
           </thead>
           <tbody>
             {trips.map((t) => (
-              <tr key={t.id} className="border-b hover:bg-gray-50">
-                <td className="px-6 py-3">{t.origin}</td>
-                <td className="px-6 py-3">{t.destination}</td>
-                <td className="px-6 py-3">{t.items}</td>
-                <td className="px-6 py-3">{t.weight}</td>
-                <td className="px-6 py-3">{t.manager}</td>
+              <tr key={t._id} className="border-b hover:bg-gray-50">
+                <td className="px-6 py-3">{t.source?.customLocation || t.source?.location?.name}</td>
+                <td className="px-6 py-3">{t.destination?.customLocation || t.destination?.location?.name}</td>
+                <td className="px-6 py-3">{t.material?.name}</td>
+                <td className="px-6 py-3">{t.quantity?.net} {t.quantity?.unit}</td>
+                <td className="px-6 py-3">{t.driver?.name}</td>
                 <td className="px-6 py-3 flex justify-end gap-2">
                   <button
                     onClick={() => openEditModal(t)}
@@ -78,7 +88,7 @@ export default function TripsPage() {
                     <Edit2 className="w-4 h-4" />
                   </button>
                   <button
-                    onClick={() => handleDelete(t.id)}
+                    onClick={() => handleDelete(t._id)}
                     className="w-9 h-9 rounded-lg bg-red-50 text-red-600 hover:bg-red-100"
                   >
                     <Trash2 className="w-4 h-4" />

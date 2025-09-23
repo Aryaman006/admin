@@ -1,122 +1,200 @@
 "use client";
 import { useState, useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { fetchLocations } from "@/redux/slices/locationsSlice";
+import { fetchItems } from "@/redux/slices/itemsSlice";
+import { fetchManagers } from "@/redux/slices/managersSlice";
 
 export default function TripModal({ open, onClose, onSave, initialData }) {
-  const [formData, setFormData] = useState({
-    origin: "",
-    destination: "",
-    items: "",
-    weight: "",
-    manager: "",
-  });
+  const dispatch = useDispatch();
+
+  // fetch dropdown data from backend
+  useEffect(() => {
+    dispatch(fetchLocations());
+    dispatch(fetchItems());
+    dispatch(fetchManagers());
+  }, [dispatch]);
+
+  const { list: locations } = useSelector((state) => state.locations);
+  const { list: items } = useSelector((state) => state.items);
+  const { list: managers } = useSelector((state) => state.managers);
+
+  const [formData, setFormData] = useState(
+    initialData || {
+      origin: "",
+      destination: "",
+      material: "",
+      weight: "",
+      manager: "",
+    }
+  );
 
   useEffect(() => {
-    if (initialData) setFormData(initialData);
-    else
+    if (initialData) {
       setFormData({
-        origin: "",
-        destination: "",
-        items: "",
-        weight: "",
-        manager: "",
+        origin: initialData.source?.location?._id || "",
+        destination: initialData.destination?.location?._id || "",
+        material: initialData.material?._id || "",
+        weight: initialData.quantity?.net || "",
+        manager: initialData.driver?._id || "",
       });
-  }, [initialData, open]);
+    }
+  }, [initialData]);
+
+  const handleChange = (e) => {
+    setFormData((prev) => ({
+      ...prev,
+      [e.target.name]: e.target.value,
+    }));
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+
+    // Prepare payload in API format
+    const payload = {
+      vehicle: "replace-with-vehicle-id", // 🚨 TODO: hook up vehicle API
+      driver: formData.manager,
+      material: formData.material,
+      quantity: {
+        net: Number(formData.weight),
+        unit: "kg", // you can make this dynamic if needed
+      },
+      source: { location: formData.origin },
+      destination: { location: formData.destination },
+      type: "inbound", // or outbound, can make this selectable
+    };
+
+    onSave(payload);
+  };
 
   if (!open) return null;
 
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
-
-  const handleSave = () => {
-    // optional: validate fields
-    if (
-      !formData.origin.trim() ||
-      !formData.destination.trim() ||
-      !formData.items.trim() ||
-      !formData.weight.trim() ||
-      !formData.manager.trim()
-    )
-      return;
-
-    onSave(formData);
-    setFormData({
-      origin: "",
-      destination: "",
-      items: "",
-      weight: "",
-      manager: "",
-    });
-    onClose();
-  };
-
   return (
-    <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50">
-      <div className="bg-white rounded-2xl p-6 w-96 shadow-2xl relative animate-slideDown">
-        <h2 className="text-xl font-semibold mb-5 text-gray-800">
+    <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
+      <div className="bg-white rounded-2xl shadow-lg w-full max-w-lg p-6">
+        <h2 className="text-xl font-semibold mb-4">
           {initialData ? "Edit Trip" : "Add Trip"}
         </h2>
 
-        {/* Inputs */}
-        {[
-          { label: "Origin", name: "origin", placeholder: "e.g., Chennai" },
-          { label: "Destination", name: "destination", placeholder: "e.g., HQ / Rice Mill" },
-          { label: "Items", name: "items", placeholder: "e.g., Paddy" },
-          { label: "Weight", name: "weight", placeholder: "e.g., 200 kg" },
-          { label: "Manager Name", name: "manager", placeholder: "e.g., Aryaman" },
-        ].map((field) => (
-          <input
-            key={field.name}
-            type="text"
-            name={field.name}
-            value={formData[field.name]}
-            onChange={handleChange}
-            placeholder={field.placeholder}
-            className="w-full border border-gray-300 rounded-lg px-4 py-3 mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder-gray-400 transition-all"
-          />
-        ))}
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Origin */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Origin
+            </label>
+            <select
+              name="origin"
+              value={formData.origin}
+              onChange={handleChange}
+              className="w-full mt-1 border rounded-lg p-2"
+              required
+            >
+              <option value="">Select Origin</option>
+              {locations.map((loc) => (
+                <option key={loc._id} value={loc._id}>
+                  {loc.name}
+                </option>
+              ))}
+            </select>
+          </div>
 
-        {/* Buttons */}
-        <div className="flex justify-end gap-3">
-          <button
-            onClick={() => {
-              onClose();
-              setFormData({
-                origin: "",
-                destination: "",
-                items: "",
-                weight: "",
-                manager: "",
-              });
-            }}
-            className="px-5 py-2 border rounded-full hover:bg-gray-100 transition-all"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleSave}
-            className="px-5 py-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-all shadow-md"
-          >
-            Save
-          </button>
-        </div>
+          {/* Destination */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Destination
+            </label>
+            <select
+              name="destination"
+              value={formData.destination}
+              onChange={handleChange}
+              className="w-full mt-1 border rounded-lg p-2"
+              required
+            >
+              <option value="">Select Destination</option>
+              {locations.map((loc) => (
+                <option key={loc._id} value={loc._id}>
+                  {loc.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Material (Item) */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Item (Material)
+            </label>
+            <select
+              name="material"
+              value={formData.material}
+              onChange={handleChange}
+              className="w-full mt-1 border rounded-lg p-2"
+              required
+            >
+              <option value="">Select Item</option>
+              {items.map((mat) => (
+                <option key={mat._id} value={mat._id}>
+                  {mat.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Weight */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Weight (kg)
+            </label>
+            <input
+              type="number"
+              name="weight"
+              value={formData.weight}
+              onChange={handleChange}
+              className="w-full mt-1 border rounded-lg p-2"
+              required
+            />
+          </div>
+
+          {/* Manager (Driver) */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Manager (Driver)
+            </label>
+            <select
+              name="manager"
+              value={formData.manager}
+              onChange={handleChange}
+              className="w-full mt-1 border rounded-lg p-2"
+              required
+            >
+              <option value="">Select Manager</option>
+              {managers.map((drv) => (
+                <option key={drv._id} value={drv._id}>
+                  {drv.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Buttons */}
+          <div className="flex justify-end gap-2 pt-4">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-100"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700"
+            >
+              Save
+            </button>
+          </div>
+        </form>
       </div>
-
-      <style jsx>{`
-        @keyframes slideDown {
-          0% {
-            transform: translateY(-20px);
-            opacity: 0;
-          }
-          100% {
-            transform: translateY(0);
-            opacity: 1;
-          }
-        }
-        .animate-slideDown {
-          animation: slideDown 0.3s ease-out;
-        }
-      `}</style>
     </div>
   );
 }

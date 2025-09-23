@@ -6,7 +6,7 @@ import { addManager, editManager, deleteManager } from "@/redux/slices/managersS
 import { useState } from "react";
 
 export default function ManagerPage() {
-  const managers = useSelector((state) => state.managers.managers);
+  const managers = useSelector((state) => state.managers.managers) || []; // default to empty array
   const dispatch = useDispatch();
 
   const [openModal, setOpenModal] = useState(false);
@@ -40,6 +40,7 @@ export default function ManagerPage() {
 
   return (
     <div className="p-6">
+      {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
         <h2 className="text-2xl font-semibold text-gray-900">Managers</h2>
         <button
@@ -51,43 +52,49 @@ export default function ManagerPage() {
         </button>
       </div>
 
+      {/* Table */}
       <div className="overflow-x-auto rounded-xl border border-gray-200 shadow-lg bg-white">
-        <table className="min-w-full border-collapse">
-          <thead className="bg-gray-100">
-            <tr>
-              <th className="px-6 py-4 text-left font-medium text-gray-700 text-sm">Manager Name</th>
-              <th className="px-6 py-4 text-right font-medium text-gray-700 text-sm">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {managers.map((m, i) => (
-              <tr key={m.id} className="border-b last:border-b-0 hover:bg-gray-50">
-                <td className="px-6 py-3 text-sm text-gray-800">{m.name}</td>
-                <td className="px-6 py-3 flex justify-end gap-3">
-                  <button
-                    onClick={() => handleEdit(i)}
-                    className="w-9 h-9 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100"
-                  >
-                    <Edit2 className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => handleDelete(i)}
-                    className="w-9 h-9 rounded-full bg-red-50 text-red-600 hover:bg-red-100"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </td>
+        {managers.length > 0 ? (
+          <table className="min-w-full border-collapse">
+            <thead className="bg-gray-100">
+              <tr>
+                <th className="px-6 py-4 text-left font-medium text-gray-700 text-sm">Manager Name</th>
+                <th className="px-6 py-4 text-right font-medium text-gray-700 text-sm">Actions</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {managers.map((m, i) => (
+                <tr key={m.id} className="border-b last:border-b-0 hover:bg-gray-50">
+                  <td className="px-6 py-3 text-sm text-gray-800">{m.name}</td>
+                  <td className="px-6 py-3 flex justify-end gap-3">
+                    <button
+                      onClick={() => handleEdit(i)}
+                      className="w-9 h-9 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100"
+                    >
+                      <Edit2 className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(i)}
+                      className="w-9 h-9 rounded-full bg-red-50 text-red-600 hover:bg-red-100"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        ) : (
+          <div className="p-6 text-center text-gray-500">No managers available.</div>
+        )}
       </div>
 
+      {/* Modal */}
       <Modal
         open={openModal}
         onClose={() => setOpenModal(false)}
         onSave={handleSave}
-        initialValue={currentIndex !== null ? managers[currentIndex].name : ""}
+        initialValue={currentIndex !== null ? managers[currentIndex]?.name || "" : ""}
         title={currentIndex !== null ? "Edit Manager" : "Add Manager"}
       />
     </div>

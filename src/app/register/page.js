@@ -2,22 +2,29 @@
 import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useRouter } from "next/navigation";
-import { loginUser } from "@/redux/slices/authSlice";
+import { registerUser } from "@/redux/slices/authSlice"; // ✅ create this in authSlice
 import Image from "next/image";
 import { motion } from "framer-motion";
 
-export default function LoginPage() {
+export default function RegisterPage() {
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+
   const dispatch = useDispatch();
   const router = useRouter();
   const { loading, error } = useSelector((state) => state.auth);
 
-  const handleLogin = async (e) => {
+  const handleRegister = async (e) => {
     e.preventDefault();
-    const result = await dispatch(loginUser({ email, password }));
-    if (loginUser.fulfilled.match(result)) {
-      router.push("/dashboard"); // redirect after login
+    if (password !== confirmPassword) {
+      alert("Passwords do not match!");
+      return;
+    }
+    const result = await dispatch(registerUser({ name, email, password }));
+    if (registerUser.fulfilled.match(result)) {
+      router.push("/dashboard"); // redirect after registration
     }
   };
 
@@ -25,15 +32,14 @@ export default function LoginPage() {
     <div className="flex h-screen">
       {/* Left Side with Image */}
       <div className="hidden md:flex w-1/2 relative">
-       <Image
-  src="/mill.jpg"
-  alt="Mill workspace"
-  fill
-  className="object-cover"
-/>
+        <Image
+          src="/mill.jpg"
+          alt="Mill workspace"
+          fill
+          className="object-cover"
+        />
         <div className="absolute inset-0 bg-gradient-to-b from-black/70 to-black/50" />
 
-        {/* Centered Quote */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
@@ -42,8 +48,7 @@ export default function LoginPage() {
         >
           <div>
             <p className="text-2xl font-light italic leading-relaxed max-w-lg mx-auto">
-              “A dream doesn&apos;t become reality through magic; it takes sweat, determination and hard work.”
-              determination and hard work.”
+              “The future belongs to those who believe in the beauty of their dreams.”
             </p>
             <span className="block mt-6 text-sm opacity-80">— Wroots Global</span>
           </div>
@@ -80,7 +85,7 @@ export default function LoginPage() {
             transition={{ duration: 0.6, delay: 0.3 }}
             className="text-center text-3xl font-bold mb-2 text-gray-800"
           >
-            Welcome Back
+            Create Account
           </motion.h2>
           <motion.p
             initial={{ opacity: 0 }}
@@ -88,14 +93,30 @@ export default function LoginPage() {
             transition={{ duration: 0.6, delay: 0.4 }}
             className="text-center text-gray-500 mb-8 text-sm"
           >
-            Sign in with your registered email & password
+            Sign up with your details to get started
           </motion.p>
 
-          <form onSubmit={handleLogin} className="space-y-5">
+          <form onSubmit={handleRegister} className="space-y-5">
+            {/* Name */}
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.5, delay: 0.5 }}
+            >
+              <input
+                type="text"
+                placeholder="Full Name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="w-full border border-gray-200 rounded-lg px-4 py-3 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+              />
+            </motion.div>
+
+            {/* Email */}
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.5, delay: 0.6 }}
             >
               <input
                 type="email"
@@ -106,10 +127,11 @@ export default function LoginPage() {
               />
             </motion.div>
 
+            {/* Password */}
             <motion.div
-              initial={{ opacity: 0, x: 20 }}
+              initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5, delay: 0.6 }}
+              transition={{ duration: 0.5, delay: 0.7 }}
             >
               <input
                 type="password"
@@ -120,13 +142,28 @@ export default function LoginPage() {
               />
             </motion.div>
 
+            {/* Confirm Password */}
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.5, delay: 0.8 }}
+            >
+              <input
+                type="password"
+                placeholder="Confirm Password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className="w-full border border-gray-200 rounded-lg px-4 py-3 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+              />
+            </motion.div>
+
             <motion.button
               type="submit"
               disabled={loading}
               whileTap={{ scale: 0.95 }}
               className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-semibold py-3 rounded-lg transition shadow-md"
             >
-              {loading ? "Logging in..." : "Log In"}
+              {loading ? "Creating Account..." : "Register"}
             </motion.button>
           </form>
 
@@ -146,13 +183,13 @@ export default function LoginPage() {
   transition={{ delay: 0.7 }}
   className="mt-6 text-center text-sm text-gray-600"
 >
-  Don&apos;t have an account?{" "}
+  Already have an account?{" "}
   <button
     type="button"
-    onClick={() => router.push("/register")}
+    onClick={() => router.push("/login")}
     className="text-blue-600 font-medium hover:underline"
   >
-    Register here
+    Log in here
   </button>
 </motion.p>
 

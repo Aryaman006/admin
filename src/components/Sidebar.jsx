@@ -49,7 +49,7 @@ export default function Sidebar() {
           />
           {!collapsed && (
             <span className="text-blue-600 font-bold text-lg tracking-wide whitespace-nowrap">
-              Krishna & Co
+              Sri Vishnu and Co Hulling Agent
             </span>
           )}
         </div>

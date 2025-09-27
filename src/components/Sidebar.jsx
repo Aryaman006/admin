@@ -48,9 +48,14 @@ export default function Sidebar() {
             className="object-contain transition-all"
           />
           {!collapsed && (
-            <span className="text-blue-600 font-bold text-lg tracking-wide whitespace-nowrap">
-              Sri Vishnu and Co Hulling Agent
-            </span>
+             <div className="flex flex-col leading-tight">
+      <span className="text-blue-600 font-bold text-base tracking-wide whitespace-nowrap">
+        Sri Vishnu and Co
+      </span>
+      <span className="text-gray-500 text-xs font-medium whitespace-nowrap">
+        Hulling Agent
+      </span>
+    </div>
           )}
         </div>
         <button
